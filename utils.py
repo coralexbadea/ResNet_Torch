@@ -27,59 +27,59 @@ __all__ = [
 V = TypeVar("V")
 
 
-def accuracy(output, target, topk=(1,)):
+def accuracy(output, target, topk=(1,)):## undefined
     """Computes the accuracy over the k top predictions for the specified values of k"""
-    with torch.no_grad():
-        maxk = max(topk)
-        batch_size = target.size(0)
+    with torch.no_grad():## undefined
+        maxk = max(topk)## undefined
+        batch_size = target.size(0)## undefined
 
-        _, pred = output.topk(maxk, 1, True, True)
+        _, pred = output.topk(maxk, 1, True, True)## undefined
         pred = pred.t()
-        correct = pred.eq(target.view(1, -1).expand_as(pred))
+        correct = pred.eq(target.view(1, -1).expand_as(pred))## undefined
 
         results = []
         for k in topk:
             correct_k = correct[:k].reshape(-1).float().sum(0, keepdim=True)
-            results.append(correct_k.mul_(100.0 / batch_size))
+            results.append(correct_k.mul_(100.0 / batch_size))## undefined
         return results
 
 
-def load_state_dict(
-        model: nn.Module,
-        model_weights_path: str,
-        ema_model: nn.Module = None,
-        start_epoch: int = None,
-        best_acc1: float = None,
-        optimizer: torch.optim.Optimizer = None,
-        scheduler: torch.optim.lr_scheduler = None,
-        load_mode: str = None,
+def load_state_dict(## undefined
+        model: nn.Module,## undefined
+        model_weights_path: str,## undefined
+        ema_model: nn.Module = None,## undefined
+        start_epoch: int = None,## undefined
+        best_acc1: float = None,## undefined
+        optimizer: torch.optim.Optimizer = None,## undefined
+        scheduler: torch.optim.lr_scheduler = None,## undefined
+        load_mode: str = None,## undefined
 ) -> [nn.Module, nn.Module, str, int, float, torch.optim.Optimizer, torch.optim.lr_scheduler]:
     # Load model weights
     checkpoint = torch.load(model_weights_path, map_location=lambda storage, loc: storage)
 
-    if load_mode == "resume":
+    if load_mode == "resume":## undefined
         # Restore the parameters in the training node to this point
         start_epoch = checkpoint["epoch"]
         best_acc1 = checkpoint["best_acc1"]
         # Load model state dict. Extract the fitted model weights
         model_state_dict = model.state_dict()
-        state_dict = {k: v for k, v in checkpoint["state_dict"].items() if k in model_state_dict.keys()}
+        state_dict = {k: v for k, v in checkpoint["state_dict"].items() if k in model_state_dict.keys()}## undefined
         # Overwrite the model weights to the current model (base model)
         model_state_dict.update(state_dict)
         model.load_state_dict(model_state_dict)
         # Load ema model state dict. Extract the fitted model weights
-        ema_model_state_dict = ema_model.state_dict()
-        ema_state_dict = {k: v for k, v in checkpoint["ema_state_dict"].items() if k in ema_model_state_dict.keys()}
+        ema_model_state_dict = ema_model.state_dict()## undefined
+        ema_state_dict = {k: v for k, v in checkpoint["ema_state_dict"].items() if k in ema_model_state_dict.keys()}## undefined
         # Overwrite the model weights to the current model (ema model)
         ema_model_state_dict.update(ema_state_dict)
         ema_model.load_state_dict(ema_model_state_dict)
         # Load the optimizer model
-        optimizer.load_state_dict(checkpoint["optimizer"])
+        optimizer.load_state_dict(checkpoint["optimizer"])## undefined
         # Load the scheduler model
-        scheduler.load_state_dict(checkpoint["scheduler"])
-    else:
+        scheduler.load_state_dict(checkpoint["scheduler"])## undefined
+    else:## undefined
         # Load model state dict. Extract the fitted model weights
-        model_state_dict = model.state_dict()
+        model_state_dict = model.state_dict()## undefined
         state_dict = {k: v for k, v in checkpoint["state_dict"].items() if
                       k in model_state_dict.keys() and v.size() == model_state_dict[k].size()}
         # Overwrite the model weights to the current model
@@ -138,30 +138,30 @@ class Summary(Enum):
     COUNT = 3
 
 
-class AverageMeter(object):
+class AverageMeter(object):## undefined
     def __init__(self, name, fmt=":f", summary_type=Summary.AVERAGE):
         self.name = name
         self.fmt = fmt
         self.summary_type = summary_type
         self.reset()
 
-    def reset(self):
+    def reset(self):## undefined
         self.val = 0
         self.avg = 0
         self.sum = 0
         self.count = 0
 
-    def update(self, val, n=1):
+    def update(self, val, n=1):## undefined
         self.val = val
         self.sum += val * n
         self.count += n
         self.avg = self.sum / self.count
 
-    def __str__(self):
+    def __str__(self):## undefined
         fmtstr = "{name} {val" + self.fmt + "} ({avg" + self.fmt + "})"
         return fmtstr.format(**self.__dict__)
 
-    def summary(self):
+    def summary(self):## undefined
         if self.summary_type is Summary.NONE:
             fmtstr = ""
         elif self.summary_type is Summary.AVERAGE:
