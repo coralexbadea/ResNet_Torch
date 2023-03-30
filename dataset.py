@@ -21,7 +21,7 @@ import torch
 from PIL import Image
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
-from torchvision.datasets.folder import find_classes## undefined
+from torchvision.datasets.folder import find_classes## imports find_classes from torchvision.datasets.folder
 from torchvision.transforms import TrivialAugmentWide## undefined
 
 import imgproc## undefined
