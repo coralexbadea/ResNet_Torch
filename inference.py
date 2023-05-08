@@ -17,21 +17,21 @@ import os
 
 import cv2
 import torch
-from PIL import Image## undefined
-from torch import nn## undefined
-from torchvision.transforms import Resize, ConvertImageDtype, Normalize## undefined
+from PIL import Image## import from Python Imaging Library (the original library that enabled Python to deal with images) the Image module
+from torch import nn## import torch, ML library
+from torchvision.transforms import Resize, ConvertImageDtype, Normalize## import a few classes from the torchvision transform module for transforamtions
 
-import imgproc## undefined
-import model## undefined
-from utils import load_state_dict## undefined
+import imgproc## small python image processing package compatible with Tensorflow/Pytorch
+import model## models is a lightweight framework for mapping Python classes to schema-less databases, according to Google
+from utils import load_state_dict## import function to work with dictionaries
 
-model_names = sorted(## undefined
+model_names = sorted(## function that returns a sorted list of the specified iterable object filtered by the if condition
     name for name in model.__dict__ if name.islower() and not name.startswith("__") and callable(model.__dict__[name]))
 
 
 def load_class_label(class_label_file: str, num_classes: int) -> list:
-    class_label = json.load(open(class_label_file))## undefined
-    class_label_list = [class_label[str(i)] for i in range(num_classes)]## undefined
+    class_label = json.load(open(class_label_file))## open the file given as parameter, load a json from it and assign it to class_label
+    class_label_list = [class_label[str(i)] for i in range(num_classes)]## composes a list from the contents of the class_label dictionary
 
     return class_label_list
 
