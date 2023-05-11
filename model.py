@@ -11,132 +11,133 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-from typing import Any, List, Type, Union, Optional## undefined
+from typing import Any, List, Type, Union, Optional## import some data types
 
-import torch## undefined
-from torch import Tensor## undefined
-from torch import nn## undefined
+import torch## import torch
+from torch import Tensor## import tensor class
+from torch import nn## import neural network module 
 
-__all__ = [## undefined
-    "ResNet",## undefined
+__all__ = [## define the classes which are going to be shown when importing * from the current module
+    "ResNet",## ResNet class
     "resnet18",
 ]
 
 
-class _BasicBlock(nn.Module):## undefined
-    expansion: int = 1## undefined
+class _BasicBlock(nn.Module):## define the _BasicClock class whichi inherits from nn.Module (the underscore might mean that the class is not intented to be accessed outside this file)
+    expansion: int = 1## defines the expansion attribute of the calss
 
-    def __init__(## undefined
-            self,## undefined
-            in_channels: int,## undefined
-            out_channels: int,## undefined
-            stride: int,## undefined
-            downsample: Optional[nn.Module] = None,## undefined
-            groups: int = 1,## undefined
-            base_channels: int = 64,## undefined
+    def __init__(## class initializer
+            self,## object to init
+            in_channels: int,## input channels attribute
+            out_channels: int,## outer channels attribute
+            stride: int,## stride attribute
+            downsample: Optional[nn.Module] = None,## downsample optional attribute
+            groups: int = 1,## groups optional attribute
+            base_channels: int = 64,## base channel optional attribute
     ) -> None:
-        super(_BasicBlock, self).__init__()## undefined
-        self.stride = stride## undefined
-        self.downsample = downsample## undefined
-        self.groups = groups## undefined
-        self.base_channels = base_channels## undefined
+        super(_BasicBlock, self).__init__()## calles the init of the parent class
+        self.stride = stride## set object's stride attribute
+        self.downsample = downsample## set object's downsample attribute
+        self.groups = groups## set object's groups atribute
+        self.base_channels = base_channels## set object's base_channels attribute
 
-        self.conv1 = nn.Conv2d(in_channels, out_channels, (3, 3), (stride, stride), (1, 1), bias=False)## undefined
-        self.bn1 = nn.BatchNorm2d(out_channels)## undefined
-        self.relu = nn.ReLU(True)## undefined
-        self.conv2 = nn.Conv2d(out_channels, out_channels, (3, 3), (1, 1), (1, 1), bias=False)## undefined
-        self.bn2 = nn.BatchNorm2d(out_channels)## undefined
+        self.conv1 = nn.Conv2d(in_channels, out_channels, (3, 3), (stride, stride), (1, 1), bias=False)## applies a 2D convolution over an input signal composed of several input planes
+        self.bn1 = nn.BatchNorm2d(out_channels)## applies Batch Normalization over a 4D input
+        self.relu = nn.ReLU(True)## applies relu on the input
+        self.conv2 = nn.Conv2d(out_channels, out_channels, (3, 3), (1, 1), (1, 1), bias=False)## apply the 2D convolution again
+        self.bn2 = nn.BatchNorm2d(out_channels)## and the normalization again
 
     def forward(self, x: Tensor) -> Tensor:
         identity = x
 
-        out = self.conv1(x)## undefined
-        out = self.bn1(out)## undefined
-        out = self.relu(out)## undefined
+        out = self.conv1(x)## apply a 1D convolution on the input
+        out = self.bn1(out)## apply a Batch Normalization on the input
+        out = self.relu(out)## apply relu on the input
 
-        out = self.conv2(out)## undefined
-        out = self.bn2(out)## undefined
+        out = self.conv2(out)## convolution again
+        out = self.bn2(out)## and normalization again
 
-        if self.downsample is not None:## undefined
-            identity = self.downsample(x)## undefined
+        if self.downsample is not None:## if downsample is present
+            identity = self.downsample(x)## apply it on the input
 
-        out = torch.add(out, identity)## undefined
-        out = self.relu(out)## undefined
+        out = torch.add(out, identity)## add the identity to the torch
+        out = self.relu(out)## apply relu again on the data being processed
 
         return out
 
 
-class _Bottleneck(nn.Module):## undefined
-    expansion: int = 4## undefined
+class _Bottleneck(nn.Module):## defines a fileprivat class whichi inherits from nn.Module
+    expansion: int = 4## defines the expansion attribute of the calss
 
     def __init__(
-            self,## undefined
-            in_channels: int,## undefined
-            out_channels: int,## undefined
-            stride: int,## undefined
-            downsample: Optional[nn.Module] = None,## undefined
-            groups: int = 1,## undefined
-            base_channels: int = 64,## undefined
+            # downsampling reduces the dataset to a more manageable size
+            self,## object to be initialized
+            in_channels: int,## input channels
+            out_channels: int,## output channels
+            stride: int,## stride
+            downsample: Optional[nn.Module] = None,## optional downstride
+            groups: int = 1,## optional groups
+            base_channels: int = 64,## optional base_channels
     ) -> None:
-        super(_Bottleneck, self).__init__()## undefined
-        self.stride = stride## undefined
-        self.downsample = downsample## undefined
-        self.groups = groups## undefined
-        self.base_channels = base_channels## undefined
+        super(_Bottleneck, self).__init__()## call the init of the parent class
+        self.stride = stride## set the stride attribute with the one provided to the init function
+        self.downsample = downsample## set the downsample attribute with the one provided to the init function
+        self.groups = groups## set the groups attribute with the one provided to the init function
+        self.base_channels = base_channels## set the base_channels attribute with the one provided to the init function
 
-        channels = int(out_channels * (base_channels / 64.0)) * groups## undefined
+        channels = int(out_channels * (base_channels / 64.0)) * groups## calculate the channels based on some formula
 
-        self.conv1 = nn.Conv2d(in_channels, channels, (1, 1), (1, 1), (0, 0), bias=False)## undefined
-        self.bn1 = nn.BatchNorm2d(channels)## undefined
-        self.conv2 = nn.Conv2d(channels, channels, (3, 3), (stride, stride), (1, 1), groups=groups, bias=False)## undefined
+        self.conv1 = nn.Conv2d(in_channels, channels, (1, 1), (1, 1), (0, 0), bias=False)## applies a 2D convolution on the input channels
+        self.bn1 = nn.BatchNorm2d(channels)## applies Batch Normalization over a 4D on the channels
+        self.conv2 = nn.Conv2d(channels, channels, (3, 3), (stride, stride), (1, 1), groups=groups, bias=False)## applies a 2D convolution on the channels
         self.bn2 = nn.BatchNorm2d(channels)
-        self.conv3 = nn.Conv2d(channels, int(out_channels * self.expansion), (1, 1), (1, 1), (0, 0), bias=False)## undefined
-        self.bn3 = nn.BatchNorm2d(int(out_channels * self.expansion))## undefined
-        self.relu = nn.ReLU(True)## undefined
+        self.conv3 = nn.Conv2d(channels, int(out_channels * self.expansion), (1, 1), (1, 1), (0, 0), bias=False)## applies a 2D convolution on the channels
+        self.bn3 = nn.BatchNorm2d(int(out_channels * self.expansion))## applies Batch Normalization over a 4D on the output channels
+        self.relu = nn.ReLU(True)## creates an instance of relu with the inplace argument set to true (meaning that the result is set on the input, not on a new variable)
 
-    def forward(self, x: Tensor) -> Tensor:## undefined
-        identity = x## undefined
+    def forward(self, x: Tensor) -> Tensor:## the function that does the forward pass, feeding the input into the model
+        identity = x## identity tensor, rememebering it
 
-        out = self.conv1(x)## undefined
-        out = self.bn1(out)## undefined
-        out = self.relu(out)## undefined
+        out = self.conv1(x)## apply the 2D convolution on the input
+        out = self.bn1(out)## then the Batch Normalization
+        out = self.relu(out)## then the relu (all on top of eahc other)
 
-        out = self.conv2(out)## undefined
-        out = self.bn2(out)## undefined
-        out = self.relu(out)## undefined
+        out = self.conv2(out)## convolution again
+        out = self.bn2(out)## normalization again
+        out = self.relu(out)## relu again
 
-        out = self.conv3(out)## undefined
-        out = self.bn3(out)## undefined
+        out = self.conv3(out)## 3D convolution
+        out = self.bn3(out)## normalization again
 
-        if self.downsample is not None:## undefined
-            identity = self.downsample(x)## undefined
+        if self.downsample is not None:## is downsample is present
+            identity = self.downsample(x)## apply it on the input
 
-        out = torch.add(out, identity)## undefined
-        out = self.relu(out)## undefined
+        out = torch.add(out, identity)## add the identity to the torch
+        out = self.relu(out)## apply relu once again
 
         return out
 
 
-class ResNet(nn.Module):## undefined
+class ResNet(nn.Module):## defines the ResNet class whichi inherits from nn.Module
 
     def __init__(
-            self,## undefined
-            arch_cfg: List[int],## undefined
-            block: Type[Union[_BasicBlock, _Bottleneck]],## undefined
-            groups: int = 1,## undefined
-            channels_per_group: int = 64,## undefined
-            num_classes: int = 1000,## undefined
+            self,## object to init
+            arch_cfg: List[int],## atch_cft attribute
+            block: Type[Union[_BasicBlock, _Bottleneck]],## block attribute
+            groups: int = 1,## groups optional attribute
+            channels_per_group: int = 64,## channels_per_group optional attribute
+            num_classes: int = 1000,## num_classes optional attribute
     ) -> None:
-        super(ResNet, self).__init__()## undefined
-        self.in_channels = 64## undefined
-        self.dilation = 1## undefined
-        self.groups = groups## undefined
-        self.base_channels = channels_per_group## undefined
+        super(ResNet, self).__init__()## call the init of the super class
+        self.in_channels = 64## set the input channels of the object to 64
+        self.dilation = 1## set the dilatation to 1
+        self.groups = groups## set the groups to the provided parameter
+        self.base_channels = channels_per_group## set the base_channels to the provided parameter
 
-        self.conv1 = nn.Conv2d(3, self.in_channels, (7, 7), (2, 2), (3, 3), bias=False)## undefined
-        self.bn1 = nn.BatchNorm2d(self.in_channels)## undefined
-        self.relu = nn.ReLU(True)## undefined
-        self.maxpool = nn.MaxPool2d((3, 3), (2, 2), (1, 1))## undefined
+        self.conv1 = nn.Conv2d(3, self.in_channels, (7, 7), (2, 2), (3, 3), bias=False)## apply the 2D convolution on the input channels
+        self.bn1 = nn.BatchNorm2d(self.in_channels)## and the normalization
+        self.relu = nn.ReLU(True)## creates an instance of relu with the inplace argument set to true (meaning that the result is set on the input, not on a new variable)
+        self.maxpool = nn.MaxPool2d((3, 3), (2, 2), (1, 1))## creates an instance of a 2D max pooling with the given parameters
 
         self.layer1 = self._make_layer(arch_cfg[0], block, 64, 1)## undefined
         self.layer2 = self._make_layer(arch_cfg[1], block, 128, 2)## undefined
