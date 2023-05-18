@@ -13,217 +13,237 @@
 # ==============================================================================
 from typing import Any, List, Type, Union, Optional## undefined
 
-import torch## undefined
-from torch import Tensor## undefined
-from torch import nn## undefined
+import torch## import torch module
+from torch import Tensor## import tensor module
+from torch import nn## import nn module
 
-__all__ = [## undefined
-    "ResNet",## undefined
-    "resnet18",
+__all__ = [ ## list called __all__ which contains the names of two objects: ResNet and resnet18.
+    "ResNet", # The ResNet class or function
+    "resnet18", # The resnet18 instance of the ResNet architecture
 ]
 
 
-class _BasicBlock(nn.Module):## undefined
-    expansion: int = 1## undefined
+# This code defines a class called _BasicBlock that inherits from nn.Module.
 
-    def __init__(## undefined
-            self,## undefined
-            in_channels: int,## undefined
-            out_channels: int,## undefined
-            stride: int,## undefined
-            downsample: Optional[nn.Module] = None,## undefined
-            groups: int = 1,## undefined
-            base_channels: int = 64,## undefined
+class _BasicBlock(nn.Module):
+    expansion: int = 1 # The expansion factor for the block, default is 1.
+
+    def __init__(
+            self,
+            in_channels: int, # The number of input channels to the block.
+            out_channels: int, # The number of output channels from the block.
+            stride: int, # The stride of the block.
+            downsample: Optional[nn.Module] = None, # Optional downsampling layer to be applied to the input.
+            groups: int = 1, # The number of groups to use for the convolutional layers.
+            base_channels: int = 64, # The number of base channels to use for the convolutional layers.
     ) -> None:
-        super(_BasicBlock, self).__init__()## undefined
-        self.stride = stride## undefined
-        self.downsample = downsample## undefined
-        self.groups = groups## undefined
-        self.base_channels = base_channels## undefined
+        super(_BasicBlock, self).__init__() # Call the __init__ method of the parent class.
 
-        self.conv1 = nn.Conv2d(in_channels, out_channels, (3, 3), (stride, stride), (1, 1), bias=False)## undefined
-        self.bn1 = nn.BatchNorm2d(out_channels)## undefined
-        self.relu = nn.ReLU(True)## undefined
-        self.conv2 = nn.Conv2d(out_channels, out_channels, (3, 3), (1, 1), (1, 1), bias=False)## undefined
-        self.bn2 = nn.BatchNorm2d(out_channels)## undefined
+        self.stride = stride # Set the stride of the block.
+        self.downsample = downsample # Set the downsampling layer.
+        self.groups = groups # Set the number of groups.
+        self.base_channels = base_channels # Set the number of base channels.
+
+        # Define the convolutional layers and batch normalization layers.
+        self.conv1 = nn.Conv2d(in_channels, out_channels, (3, 3), (stride, stride), (1, 1), bias=False)
+        self.bn1 = nn.BatchNorm2d(out_channels)
+        self.relu = nn.ReLU(True)
+        self.conv2 = nn.Conv2d(out_channels, out_channels, (3, 3), (1, 1), (1, 1), bias=False)
+        self.bn2 = nn.BatchNorm2d(out_channels)
 
     def forward(self, x: Tensor) -> Tensor:
-        identity = x
+        identity = x # Save the input tensor as the identity.
 
-        out = self.conv1(x)## undefined
-        out = self.bn1(out)## undefined
-        out = self.relu(out)## undefined
+        # Apply the convolutional layers and batch normalization layers.
+        out = self.conv1(x)
+        out = self.bn1(out)
+        out = self.relu(out)
 
-        out = self.conv2(out)## undefined
-        out = self.bn2(out)## undefined
+        out = self.conv2(out)
+        out = self.bn2(out)
 
-        if self.downsample is not None:## undefined
-            identity = self.downsample(x)## undefined
+        # Apply the downsampling layer if it exists.
+        if self.downsample is not None:
+            identity = self.downsample(x)
 
-        out = torch.add(out, identity)## undefined
-        out = self.relu(out)## undefined
+        # Add the identity tensor to the output tensor and apply the ReLU activation.
+        out = torch.add(out, identity)
+        out = self.relu(out)
 
         return out
 
 
-class _Bottleneck(nn.Module):## undefined
-    expansion: int = 4## undefined
+# This code defines a class called _Bottleneck that inherits from nn.Module.
+
+class _Bottleneck(nn.Module):
+    expansion: int = 4 # The expansion factor for the block, default is 4.
 
     def __init__(
-            self,## undefined
-            in_channels: int,## undefined
-            out_channels: int,## undefined
-            stride: int,## undefined
-            downsample: Optional[nn.Module] = None,## undefined
-            groups: int = 1,## undefined
-            base_channels: int = 64,## undefined
+            self,
+            in_channels: int, # The number of input channels to the block.
+            out_channels: int, # The number of output channels from the block.
+            stride: int, # The stride of the block.
+            downsample: Optional[nn.Module] = None, # Optional downsampling layer to be applied to the input.
+            groups: int = 1, # The number of groups to use for the convolutional layers.
+            base_channels: int = 64, # The number of base channels to use for the convolutional layers.
     ) -> None:
-        super(_Bottleneck, self).__init__()## undefined
-        self.stride = stride## undefined
-        self.downsample = downsample## undefined
-        self.groups = groups## undefined
-        self.base_channels = base_channels## undefined
+        super(_Bottleneck, self).__init__() # Call the __init__ method of the parent class.
 
-        channels = int(out_channels * (base_channels / 64.0)) * groups## undefined
+        self.stride = stride # Set the stride of the block.
+        self.downsample = downsample # Set the downsampling layer.
+        self.groups = groups # Set the number of groups.
+        self.base_channels = base_channels # Set the number of base channels.
 
-        self.conv1 = nn.Conv2d(in_channels, channels, (1, 1), (1, 1), (0, 0), bias=False)## undefined
-        self.bn1 = nn.BatchNorm2d(channels)## undefined
-        self.conv2 = nn.Conv2d(channels, channels, (3, 3), (stride, stride), (1, 1), groups=groups, bias=False)## undefined
+        # Calculate the number of channels for the convolutional layers.
+        channels = int(out_channels * (base_channels / 64.0)) * groups
+
+        # Define the convolutional layers and batch normalization layers.
+        self.conv1 = nn.Conv2d(in_channels, channels, (1, 1), (1, 1), (0, 0), bias=False)
+        self.bn1 = nn.BatchNorm2d(channels)
+        self.conv2 = nn.Conv2d(channels, channels, (3, 3), (stride, stride), (1, 1), groups=groups, bias=False)
         self.bn2 = nn.BatchNorm2d(channels)
-        self.conv3 = nn.Conv2d(channels, int(out_channels * self.expansion), (1, 1), (1, 1), (0, 0), bias=False)## undefined
-        self.bn3 = nn.BatchNorm2d(int(out_channels * self.expansion))## undefined
-        self.relu = nn.ReLU(True)## undefined
+        self.conv3 = nn.Conv2d(channels, int(out_channels * self.expansion), (1, 1), (1, 1), (0, 0), bias=False)
+        self.bn3 = nn.BatchNorm2d(int(out_channels * self.expansion))
+        self.relu = nn.ReLU(True)
 
-    def forward(self, x: Tensor) -> Tensor:## undefined
-        identity = x## undefined
+    def forward(self, x: Tensor) -> Tensor:
+        identity = x # Save the input tensor as the identity.
 
-        out = self.conv1(x)## undefined
-        out = self.bn1(out)## undefined
-        out = self.relu(out)## undefined
+        # Apply the convolutional layers and batch normalization layers.
+        out = self.conv1(x)
+        out = self.bn1(out)
+        out = self.relu(out)
 
-        out = self.conv2(out)## undefined
-        out = self.bn2(out)## undefined
-        out = self.relu(out)## undefined
+        out = self.conv2(out)
+        out = self.bn2(out)
+        out = self.relu(out)
 
-        out = self.conv3(out)## undefined
-        out = self.bn3(out)## undefined
+        out = self.conv3(out)
+        out = self.bn3(out)
 
-        if self.downsample is not None:## undefined
-            identity = self.downsample(x)## undefined
+        # Apply the downsampling layer if it exists.
+        if self.downsample is not None:
+            identity = self.downsample(x)
 
-        out = torch.add(out, identity)## undefined
-        out = self.relu(out)## undefined
+        # Add the identity tensor to the output tensor and apply the ReLU activation.
+        out = torch.add(out, identity)
+        out = self.relu(out)
 
         return out
 
 
-class ResNet(nn.Module):## undefined
+# This code defines a class called ResNet that inherits from nn.Module.
 
+class ResNet(nn.Module):
     def __init__(
-            self,## undefined
-            arch_cfg: List[int],## undefined
-            block: Type[Union[_BasicBlock, _Bottleneck]],## undefined
-            groups: int = 1,## undefined
-            channels_per_group: int = 64,## undefined
-            num_classes: int = 1000,## undefined
+            self,
+            arch_cfg: List[int], # A list of integers representing the number of blocks in each layer of the neural network.
+            block: Type[Union[_BasicBlock, _Bottleneck]], # The type of building block to use for the neural network.
+            groups: int = 1, # The number of groups to use for the convolutional layers.
+            channels_per_group: int = 64, # The number of base channels to use for the convolutional layers.
+            num_classes: int = 1000, # The number of output classes for the neural network.
     ) -> None:
-        super(ResNet, self).__init__()## undefined
-        self.in_channels = 64## undefined
-        self.dilation = 1## undefined
-        self.groups = groups## undefined
-        self.base_channels = channels_per_group## undefined
+        super(ResNet, self).__init__() # Call the __init__ method of the parent class.
 
-        self.conv1 = nn.Conv2d(3, self.in_channels, (7, 7), (2, 2), (3, 3), bias=False)## undefined
-        self.bn1 = nn.BatchNorm2d(self.in_channels)## undefined
-        self.relu = nn.ReLU(True)## undefined
-        self.maxpool = nn.MaxPool2d((3, 3), (2, 2), (1, 1))## undefined
+        self.in_channels = 64 # Set the number of input channels.
+        self.dilation = 1 # Set the dilation rate.
+        self.groups = groups # Set the number of groups.
+        self.base_channels = channels_per_group # Set the number of base channels.
 
-        self.layer1 = self._make_layer(arch_cfg[0], block, 64, 1)## undefined
-        self.layer2 = self._make_layer(arch_cfg[1], block, 128, 2)## undefined
-        self.layer3 = self._make_layer(arch_cfg[2], block, 256, 2)## undefined
-        self.layer4 = self._make_layer(arch_cfg[3], block, 512, 2)## undefined
+        # Define the convolutional layers and batch normalization layers for the input.
+        self.conv1 = nn.Conv2d(3, self.in_channels, (7, 7), (2, 2), (3, 3), bias=False)
+        self.bn1 = nn.BatchNorm2d(self.in_channels)
+        self.relu = nn.ReLU(True)
+        self.maxpool = nn.MaxPool2d((3, 3), (2, 2), (1, 1))
 
-        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))## undefined
+        # Define the layers of the neural network using the specified building block.
+        self.layer1 = self._make_layer(arch_cfg[0], block, 64, 1)
+        self.layer2 = self._make_layer(arch_cfg[1], block, 128, 2)
+        self.layer3 = self._make_layer(arch_cfg[2], block, 256, 2)
+        self.layer4 = self._make_layer(arch_cfg[3], block, 512, 2)
 
-        self.fc = nn.Linear(512 * block.expansion, num_classes)## undefined
+        self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
+        self.fc = nn.Linear(512 * block.expansion, num_classes)
 
         # Initialize neural network weights
-        self._initialize_weights()## undefined
+        self._initialize_weights()
 
-    def _make_layer(## undefined
+    def _make_layer(
             self,
-            repeat_times: int,## undefined
-            block: Type[Union[_BasicBlock, _Bottleneck]],
-            channels: int,
-            stride: int = 1,
+            repeat_times: int, # The number of times to repeat the building block.
+            block: Type[Union[_BasicBlock, _Bottleneck]], # The type of building block to use.
+            channels: int, # The number of output channels for the building block.
+            stride: int = 1, # The stride of the building block.
     ) -> nn.Sequential:
         downsample = None
 
-        if stride != 1 or self.in_channels != channels * block.expansion:## undefined
-            downsample = nn.Sequential(## undefined
-                nn.Conv2d(self.in_channels, channels * block.expansion, (1, 1), (stride, stride), (0, 0), bias=False),## undefined
-                nn.BatchNorm2d(channels * block.expansion),## undefined
+        # Create a downsampling layer if the stride is not 1 or the number of input channels is not equal to the number of output channels.
+        if stride != 1 or self.in_channels != channels * block.expansion:
+            downsample = nn.Sequential(
+                nn.Conv2d(self.in_channels, channels * block.expansion, (1, 1), (stride, stride), (0, 0), bias=False),
+                nn.BatchNorm2d(channels * block.expansion),
             )
 
-        layers = [## undefined
-            block(## undefined
-                self.in_channels,## undefined
-                channels,## undefined
-                stride,## undefined
-                downsample,## undefined
-                self.groups,## undefined
-                self.base_channels## undefined
+        layers = [
+            block(
+                self.in_channels,
+                channels,
+                stride,
+                downsample,
+                self.groups,
+                self.base_channels
             )
         ]
-        self.in_channels = channels * block.expansion## undefined
-        for _ in range(1, repeat_times):## undefined
-            layers.append(## undefined
+        self.in_channels = channels * block.expansion
+        for _ in range(1, repeat_times):
+            layers.append(
                 block(
-                    self.in_channels,## undefined
-                    channels,## undefined
-                    1,## undefined
+                    self.in_channels,
+                    channels,
+                    1,
                     None,
                     self.groups,
                     self.base_channels,
                 )
             )
 
-        return nn.Sequential(*layers)## undefined
+        return nn.Sequential(*layers)
 
     def forward(self, x: Tensor) -> Tensor:
-        out = self._forward_impl(x)## undefined
+        out = self._forward_impl(x)
 
         return out
 
     # Support torch.script function
-    def _forward_impl(self, x: Tensor) -> Tensor:## undefined
-        out = self.conv1(x)## undefined
-        out = self.bn1(out)## undefined
-        out = self.relu(out)## undefined
-        out = self.maxpool(out)## undefined
+    def _forward_impl(self, x: Tensor) -> Tensor:
+        out = self.conv1(x)
+        out = self.bn1(out)
+        out = self.relu(out)
+        out = self.maxpool(out)
 
-        out = self.layer1(out)## undefined
-        out = self.layer2(out)## undefined
-        out = self.layer3(out)## undefined
-        out = self.layer4(out)## undefined
+        out = self.layer1(out)
+        out = self.layer2(out)
+        out = self.layer3(out)
+        out = self.layer4(out)
 
-        out = self.avgpool(out)## undefined
-        out = torch.flatten(out, 1)## undefined
-        out = self.fc(out)## undefined
+        out = self.avgpool(out)
+        out = torch.flatten(out, 1)
+        out = self.fc(out)
 
         return out
 
-    def _initialize_weights(self) -> None:## undefined
-        for module in self.modules():## undefined
-            if isinstance(module, nn.Conv2d):## undefined
-                nn.init.kaiming_normal_(module.weight, mode="fan_out", nonlinearity="relu")## undefined
-            elif isinstance(module, (nn.BatchNorm2d, nn.GroupNorm)):## undefined
-                nn.init.constant_(module.weight, 1)## undefined
-                nn.init.constant_(module.bias, 0)## undefined
+    def _initialize_weights(self) -> None:
+        for module in self.modules():
+            if isinstance(module, nn.Conv2d):
+                nn.init.kaiming_normal_(module.weight, mode="fan_out", nonlinearity="relu")
+            elif isinstance(module, (nn.BatchNorm2d, nn.GroupNorm)):
+                nn.init.constant_(module.weight, 1)
+                nn.init.constant_(module.bias, 0)
 
 
-def resnet18(**kwargs: Any) -> ResNet:## undefined
-    model = ResNet([2, 2, 2, 2], _BasicBlock, **kwargs)## undefined
+## Create a ResNet model with 18 layers using the specified building block.
+def resnet18(**kwargs: Any) -> ResNet:
+    model = ResNet([2, 2, 2, 2], _BasicBlock, **kwargs)
 
     return model
 
